@@ -1,6 +1,12 @@
-
+import { Button } from "./components/Button";
+import { ThemeProvider } from 'styled-components'
+import { Default } from './styles/themes';
 export function App() {
   return (
-    <h1>Olá Mundo</h1>
+    <ThemeProvider theme={Default}>
+      <Button />
+      <Button />
+      <Button />
+    </ThemeProvider>
   )
 }
