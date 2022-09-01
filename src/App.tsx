@@ -1,9 +1,9 @@
 import { Button } from "./components/Button";
 import { ThemeProvider } from 'styled-components'
-import { Default } from './styles/themes';
+import { defaultTheme } from './styles/themes';
 export function App() {
   return (
-    <ThemeProvider theme={Default}>
+    <ThemeProvider theme={defaultTheme}>
       <Button />
       <Button />
       <Button />
