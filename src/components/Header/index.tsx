@@ -1,5 +1,6 @@
 import React from "react";
 import { Timer, Scroll } from "phosphor-react";
+import { NavLink } from "react-router-dom";
 import { LogoIcon } from "../../common/icons";
 import * as S from "./styles";
 
@@ -8,8 +9,12 @@ export function Header() {
     <S.Container>
       <LogoIcon />
       <nav>
-        <a href=""><Timer width={24} /></a>
-        <a href=""><Scroll width={24} /></a>
+        <NavLink to='/' title="Timer">
+          <Timer size={24} />
+        </NavLink>
+        <NavLink to="/history" title="History">
+          <Scroll size={24} />
+        </NavLink>
       </nav>
     </S.Container>
   );
