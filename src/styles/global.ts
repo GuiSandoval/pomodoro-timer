@@ -9,7 +9,8 @@ export const GlobalStyles = createGlobalStyle`
 
   body {
     background-color: ${(props) => props.theme["gray-900"]};
-    color: ${(props) => props.theme["gray-300"]}
+    color: ${(props) => props.theme["gray-300"]};
+    --webkit-font-smooting: antialiased;
   }
 
   button {
@@ -24,6 +25,5 @@ export const GlobalStyles = createGlobalStyle`
 
   :focus {
     outline: 0;
-    box-shadow: 0 0 0 2px ${(props) => props.theme["green-500"]};
   }
 `;
