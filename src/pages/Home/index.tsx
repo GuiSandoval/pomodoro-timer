@@ -14,13 +14,22 @@ const newPomodoFormSchemaValidation = zod.object({
     .max(60)
 });
 
+type newPomodoFormData = zod.infer<typeof newPomodoFormSchemaValidation>
+
 export function Home() {
   console.log("Renderizou o Componente");
-  const { register, handleSubmit, watch } = useForm({ resolver: zodResolver(newPomodoFormSchemaValidation) });
+  const { register, handleSubmit, watch, reset } = useForm<newPomodoFormData>({
+    resolver: zodResolver(newPomodoFormSchemaValidation),
+    defaultValues: {
+      nameProject: "",
+      minutesAmount: 0
+    }
+  });
   const nameProject = watch("nameProject");
 
   function handleSendForm(data: any) {
     console.log("Executou aqui", data);
+    reset();
   }
 
   return (
