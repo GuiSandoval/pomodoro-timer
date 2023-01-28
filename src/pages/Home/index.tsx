@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
@@ -16,8 +16,18 @@ const newPomodoFormSchemaValidation = zod.object({
 
 type newPomodoFormData = zod.infer<typeof newPomodoFormSchemaValidation>
 
+interface Cycle {
+  id: string;
+  name: string;
+  minutes: number;
+
+}
+
 export function Home() {
-  console.log("Renderizou o Componente");
+  const [cycles, setCycles] = useState<Cycle[]>([]);
+  const [activeCycle, setActiveCycle] = useState<string | null>(null);
+  const [amountSeconds, setAmountSeconds] = useState(0);
+
   const { register, handleSubmit, watch, reset } = useForm<newPomodoFormData>({
     resolver: zodResolver(newPomodoFormSchemaValidation),
     defaultValues: {
@@ -27,10 +37,54 @@ export function Home() {
   });
   const nameProject = watch("nameProject");
 
-  function handleSendForm(data: any) {
-    console.log("Executou aqui", data);
+
+  function handleSendForm(data: newPomodoFormData) {
+    const id = String(new Date().getTime());
+
+    const newCycle = {
+      id,
+      name: data.nameProject,
+      minutes: data.minutesAmount
+    };
+
+    setCycles(prev => [...prev, newCycle]);
+    setActiveCycle(id);
+    setAmountSeconds(0);
+
     reset();
   }
+
+  const activeCicle = cycles.find(cycle => cycle.id === activeCycle);
+
+  const totalSeconds = activeCicle ? activeCicle.minutes * 60 : 0;
+  const currentSeconds = activeCicle ? totalSeconds - amountSeconds : 0;
+
+  const minutesAmount = Math.floor(currentSeconds / 60);
+  const secondsAmount = currentSeconds % 60;
+
+  const minutes = String(minutesAmount).padStart(2, "0");
+  const seconds = String(secondsAmount).padStart(2, "0");
+
+  useEffect(() => {
+    let interval: number;
+
+    if (activeCicle) {
+      interval = setInterval(() => {
+        setAmountSeconds(prev => prev + 1);
+      }, 1000);
+    }
+
+    return () => clearInterval(interval);
+
+  }, [activeCycle]);
+
+
+  useEffect(() => {
+    if (currentSeconds > 0) {
+      document.title = `Pomodoro - ${minutes}:${seconds} `;
+    }
+  }, [minutes, seconds]);
+
 
   return (
     <S.Container>
@@ -67,11 +121,11 @@ export function Home() {
         </S.FormContainer>
 
         <S.CountdownContainer>
-          <span>0</span>
-          <span>0</span>
+          <span>{minutes[0]}</span>
+          <span>{minutes[1]}</span>
           <S.Separator>:</S.Separator>
-          <span>0</span>
-          <span>0</span>
+          <span>{seconds[0]}</span>
+          <span>{seconds[1]}</span>
         </S.CountdownContainer>
 
         <Button
