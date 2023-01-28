@@ -17,6 +17,8 @@ export default {
 
   "yellow-500": "#FBA94C",
 
+  danger: "#AB222E",
+
   white: "#FFF",
   black: "#000",
 };

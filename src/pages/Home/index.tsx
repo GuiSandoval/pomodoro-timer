@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
-import { Play } from "phosphor-react";
+import { HandPalm, Play } from "phosphor-react";
 import * as S from "./styles";
 import { Button } from "../../components/Button";
 
@@ -20,6 +20,7 @@ interface Cycle {
   id: string;
   name: string;
   minutes: number;
+  stoppedAt?: Date;
 
 }
 
@@ -52,6 +53,23 @@ export function Home() {
     setAmountSeconds(0);
 
     reset();
+  }
+
+  function handleStopCycle() {
+    setCycles(prev => {
+      const newCycles = prev.map(cycle => {
+        if (cycle.id === activeCycle) {
+          return {
+            ...cycle,
+            stoppedAt: new Date()
+          };
+        }
+        return cycle;
+      });
+      return newCycles;
+    });
+
+    setActiveCycle(null);
   }
 
   const activeCicle = cycles.find(cycle => cycle.id === activeCycle);
@@ -95,6 +113,7 @@ export function Home() {
             type="text"
             id="nameProject"
             list="suggestedProjects"
+            disabled={!!activeCycle}
             placeholder="Dê um nome para o seu projeto"
             {...register("nameProject")}
           />
@@ -114,6 +133,7 @@ export function Home() {
             step={5}
             min={5}
             max={60}
+            disabled={!!activeCycle}
             {...register("minutesAmount", { valueAsNumber: true })}
           />
 
@@ -128,13 +148,23 @@ export function Home() {
           <span>{seconds[1]}</span>
         </S.CountdownContainer>
 
-        <Button
-          type="submit"
-          disabled={!nameProject}
-          icon={<Play size={24} />}
-        >
-          Começar
-        </Button>
+        {activeCicle ?
+          <Button
+            type="button"
+            color="danger"
+            icon={<HandPalm size={24} />}
+            onClick={handleStopCycle}
+          >
+            Interromper
+          </Button> :
+          <Button
+            type="submit"
+            disabled={!nameProject}
+            icon={<Play size={24} />}
+          >
+            Começar
+          </Button>
+        }
       </form>
     </S.Container>
   );

@@ -1,7 +1,12 @@
 import styled from "styled-components";
 
-export const ContainerButton = styled.button`
-  background-color: ${({ theme }) => theme["green-500"]};
+interface ButtonProps {
+  color?: "danger";
+}
+
+export const ContainerButton = styled.button<ButtonProps>`
+  background-color: ${({ theme, color }) =>
+    color ? theme[color] : theme["green-500"]};
   color: ${({ theme }) => theme["gray-100"]};
   padding: 1rem;
   width: 100%;
