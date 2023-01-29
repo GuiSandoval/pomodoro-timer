@@ -3,14 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as zod from "zod";
 import { HandPalm, Play } from "phosphor-react";
-import * as S from "./styles";
+import { differenceInSeconds } from "date-fns";
+
 import { Button } from "../../components/Button";
+
+import * as S from "./styles";
 
 const newPomodoFormSchemaValidation = zod.object({
   nameProject: zod.string().min(1, "Informe  a tarefa"),
   minutesAmount: zod
     .number()
-    .min(5)
+    .min(1)
     .max(60)
 });
 
@@ -20,13 +23,14 @@ interface Cycle {
   id: string;
   name: string;
   minutes: number;
+  startDate: Date;
   stoppedAt?: Date;
-
+  finishedAt?: Date;
 }
 
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [activeCycle, setActiveCycle] = useState<string | null>(null);
+  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [amountSeconds, setAmountSeconds] = useState(0);
 
   const { register, handleSubmit, watch, reset } = useForm<newPomodoFormData>({
@@ -45,11 +49,12 @@ export function Home() {
     const newCycle = {
       id,
       name: data.nameProject,
-      minutes: data.minutesAmount
+      minutes: data.minutesAmount,
+      startDate: new Date()
     };
 
     setCycles(prev => [...prev, newCycle]);
-    setActiveCycle(id);
+    setActiveCycleId(id);
     setAmountSeconds(0);
 
     reset();
@@ -58,7 +63,7 @@ export function Home() {
   function handleStopCycle() {
     setCycles(prev => {
       const newCycles = prev.map(cycle => {
-        if (cycle.id === activeCycle) {
+        if (cycle.id === activeCycleId) {
           return {
             ...cycle,
             stoppedAt: new Date()
@@ -69,10 +74,10 @@ export function Home() {
       return newCycles;
     });
 
-    setActiveCycle(null);
+    setActiveCycleId(null);
   }
 
-  const activeCicle = cycles.find(cycle => cycle.id === activeCycle);
+  const activeCicle = cycles.find(cycle => cycle.id === activeCycleId);
 
   const totalSeconds = activeCicle ? activeCicle.minutes * 60 : 0;
   const currentSeconds = activeCicle ? totalSeconds - amountSeconds : 0;
@@ -85,20 +90,41 @@ export function Home() {
 
   useEffect(() => {
     let interval: number;
-
+    console.log("ta executando aqui ");
     if (activeCicle) {
       interval = setInterval(() => {
-        setAmountSeconds(prev => prev + 1);
+        const secondsDiff = differenceInSeconds(new Date(), activeCicle.startDate);
+
+        if (secondsDiff >= totalSeconds) {
+          setCycles(prev => {
+            const newCycles = prev.map(cycle => {
+              if (cycle.id === activeCycleId) {
+                return {
+                  ...cycle,
+                  finishedAt: new Date()
+                };
+              }
+              return cycle;
+            });
+            return newCycles;
+          });
+          setActiveCycleId(null);
+          setAmountSeconds(totalSeconds);
+
+          clearInterval(interval);
+          return;
+        }
+        setAmountSeconds(secondsDiff);
       }, 1000);
     }
 
     return () => clearInterval(interval);
 
-  }, [activeCycle]);
+  }, [activeCycleId]);
 
 
   useEffect(() => {
-    if (currentSeconds > 0) {
+    if (currentSeconds >= 0) {
       document.title = `Pomodoro - ${minutes}:${seconds} `;
     }
   }, [minutes, seconds]);
@@ -113,7 +139,7 @@ export function Home() {
             type="text"
             id="nameProject"
             list="suggestedProjects"
-            disabled={!!activeCycle}
+            disabled={!!activeCycleId}
             placeholder="Dê um nome para o seu projeto"
             {...register("nameProject")}
           />
@@ -131,9 +157,9 @@ export function Home() {
             id="minutesAmount"
             placeholder="00"
             step={5}
-            min={5}
+            min={1}
             max={60}
-            disabled={!!activeCycle}
+            disabled={!!activeCycleId}
             {...register("minutesAmount", { valueAsNumber: true })}
           />
 
