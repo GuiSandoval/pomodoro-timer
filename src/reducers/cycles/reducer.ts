@@ -25,7 +25,7 @@ export function cyclesReducer(state: ICycleState, action: any) {
       return {
         ...state,
         cycles: state.cycles.map((cycle) => {
-          if (cycle.id === action.payload.activeCycleId) {
+          if (cycle.id === state.activeCycleId) {
             return {
               ...cycle,
               stoppedAt: new Date(),
@@ -39,7 +39,7 @@ export function cyclesReducer(state: ICycleState, action: any) {
       return {
         ...state,
         cycles: state.cycles.map((cycle) => {
-          if (cycle.id === action.payload.activeCycleId) {
+          if (cycle.id === state.activeCycleId) {
             return {
               ...cycle,
               finishedAt: new Date(),
