@@ -1,7 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
+import { formatDistanceToNow } from "date-fns";
+import ptBR from "date-fns/locale/pt-BR";
+
+import { CyclesContext } from "../../contexts/CyclesContext";
 import * as S from "./styles";
 
 export function History() {
+  const { cycles } = useContext(CyclesContext);
+
   return (
     <S.Container>
       <h1>Meu Histórico</h1>
@@ -17,30 +23,18 @@ export function History() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>Tarefa</td>
-              <td>20 minutos</td>
-              <td>Há 2 meses</td>
-              <td><S.Status colorStatus="green">Concluido</S.Status></td>
-            </tr>
-            <tr>
-              <td>Tarefa</td>
-              <td>20 minutos</td>
-              <td>Há 2 meses</td>
-              <td><S.Status colorStatus="green">Concluido</S.Status></td>
-            </tr>
-            <tr>
-              <td>Tarefa</td>
-              <td>20 minutos</td>
-              <td>Há 2 meses</td>
-              <td><S.Status colorStatus="red">Finalizado</S.Status></td>
-            </tr>
-            <tr>
-              <td>Tarefa</td>
-              <td>20 minutos</td>
-              <td>Há 2 meses</td>
-              <td><S.Status colorStatus="yellow">Em progresso</S.Status></td>
-            </tr>
+            {cycles.map(cycle => (
+              <tr key={cycle.id}>
+                <td>{cycle.name}</td>
+                <td>{cycle.minutes} minutos</td>
+                <td>{formatDistanceToNow(cycle.startDate, { addSuffix: true, locale: ptBR })}</td>
+                <td>
+                  {cycle.finishedAt && <S.Status colorStatus="green">Concluido</S.Status>}
+                  {cycle.stoppedAt && <S.Status colorStatus="red">Interrompido</S.Status>}
+                  {!cycle.finishedAt && !cycle.stoppedAt && <S.Status colorStatus="yellow">Em andamento</S.Status>}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </S.HistoryList>
