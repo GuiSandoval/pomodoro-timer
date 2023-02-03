@@ -1,23 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { createContext, useState } from "react";
 import * as zod from "zod";
 import { HandPalm, Play } from "phosphor-react";
-import { differenceInSeconds } from "date-fns";
+import { FormProvider, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "../../components/Button";
 
+import { NewCycleForm, Countdown } from "./components";
 import * as S from "./styles";
-
-const newPomodoFormSchemaValidation = zod.object({
-  nameProject: zod.string().min(1, "Informe  a tarefa"),
-  minutesAmount: zod
-    .number()
-    .min(1)
-    .max(60)
-});
-
-type newPomodoFormData = zod.infer<typeof newPomodoFormSchemaValidation>
 
 interface Cycle {
   id: string;
@@ -28,21 +18,59 @@ interface Cycle {
   finishedAt?: Date;
 }
 
+// Validations
+const newPomodoFormSchemaValidation = zod.object({
+  nameProject: zod.string().min(1, "Informe  a tarefa"),
+  minutesAmount: zod
+    .number()
+    .min(1)
+    .max(60)
+});
+
+type newPomodoFormData = zod.infer<typeof newPomodoFormSchemaValidation>
+
+// Contexts
+interface ICycleContext {
+  activeCycle: Cycle | undefined;
+  activeCycleId: string | null;
+  amountSeconds: number;
+  markCurrentCycleAsFinished: () => void;
+  setSecondsPassed: (seconds: number) => void;
+}
+export const CyclesContext = createContext({} as ICycleContext);
+
 export function Home() {
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
   const [amountSeconds, setAmountSeconds] = useState(0);
 
-  const { register, handleSubmit, watch, reset } = useForm<newPomodoFormData>({
+  const newCycleForm = useForm<newPomodoFormData>({
     resolver: zodResolver(newPomodoFormSchemaValidation),
     defaultValues: {
       nameProject: "",
       minutesAmount: 0
     }
   });
-  const nameProject = watch("nameProject");
+  const { handleSubmit, reset, watch } = newCycleForm;
 
 
+  function setSecondsPassed(seconds: number) {
+    setAmountSeconds(seconds);
+  }
+  function markCurrentCycleAsFinished() {
+    setCycles(prev => {
+      const newCycles = prev.map(cycle => {
+        if (cycle.id === activeCycleId) {
+          return {
+            ...cycle,
+            finishedAt: new Date()
+          };
+        }
+        return cycle;
+      });
+      return newCycles;
+    });
+  }
   function handleSendForm(data: newPomodoFormData) {
     const id = String(new Date().getTime());
 
@@ -59,7 +87,6 @@ export function Home() {
 
     reset();
   }
-
   function handleStopCycle() {
     setCycles(prev => {
       const newCycles = prev.map(cycle => {
@@ -77,104 +104,27 @@ export function Home() {
     setActiveCycleId(null);
   }
 
-  const activeCicle = cycles.find(cycle => cycle.id === activeCycleId);
-
-  const totalSeconds = activeCicle ? activeCicle.minutes * 60 : 0;
-  const currentSeconds = activeCicle ? totalSeconds - amountSeconds : 0;
-
-  const minutesAmount = Math.floor(currentSeconds / 60);
-  const secondsAmount = currentSeconds % 60;
-
-  const minutes = String(minutesAmount).padStart(2, "0");
-  const seconds = String(secondsAmount).padStart(2, "0");
-
-  useEffect(() => {
-    let interval: number;
-    console.log("ta executando aqui ");
-    if (activeCicle) {
-      interval = setInterval(() => {
-        const secondsDiff = differenceInSeconds(new Date(), activeCicle.startDate);
-
-        if (secondsDiff >= totalSeconds) {
-          setCycles(prev => {
-            const newCycles = prev.map(cycle => {
-              if (cycle.id === activeCycleId) {
-                return {
-                  ...cycle,
-                  finishedAt: new Date()
-                };
-              }
-              return cycle;
-            });
-            return newCycles;
-          });
-          setActiveCycleId(null);
-          setAmountSeconds(totalSeconds);
-
-          clearInterval(interval);
-          return;
-        }
-        setAmountSeconds(secondsDiff);
-      }, 1000);
-    }
-
-    return () => clearInterval(interval);
-
-  }, [activeCycleId]);
-
-
-  useEffect(() => {
-    if (currentSeconds >= 0) {
-      document.title = `Pomodoro - ${minutes}:${seconds} `;
-    }
-  }, [minutes, seconds]);
-
+  const activeCycle = cycles.find(cycle => cycle.id === activeCycleId);
+  const nameProject = watch("nameProject");
 
   return (
     <S.Container>
       <form action="" onSubmit={handleSubmit(handleSendForm)}>
-        <S.FormContainer>
-          <label htmlFor="nameProject">Vou trabalhar em</label>
-          <S.InputTask
-            type="text"
-            id="nameProject"
-            list="suggestedProjects"
-            disabled={!!activeCycleId}
-            placeholder="Dê um nome para o seu projeto"
-            {...register("nameProject")}
-          />
 
-          <datalist id="suggestedProjects">
-            <option value="Projeto 1" />
-            <option value="Projeto 2" />
-            <option value="Projeto 3" />
-            <option value="Projeto 4" />
-          </datalist>
+        <CyclesContext.Provider value={{
+          activeCycle,
+          activeCycleId,
+          amountSeconds,
+          markCurrentCycleAsFinished,
+          setSecondsPassed
+        }}>
+          <FormProvider {...newCycleForm}>
+            <NewCycleForm />
+          </FormProvider>
+          <Countdown />
+        </CyclesContext.Provider>
 
-          <label htmlFor="minutesAmount">durante</label>
-          <S.InputMinutes
-            type="number"
-            id="minutesAmount"
-            placeholder="00"
-            step={5}
-            min={1}
-            max={60}
-            disabled={!!activeCycleId}
-            {...register("minutesAmount", { valueAsNumber: true })}
-          />
-
-          <span>minutos.</span>
-        </S.FormContainer>
-
-        <S.CountdownContainer>
-          <span>{minutes[0]}</span>
-          <span>{minutes[1]}</span>
-          <S.Separator>:</S.Separator>
-          <span>{seconds[0]}</span>
-          <span>{seconds[1]}</span>
-        </S.CountdownContainer>
-
-        {activeCicle ?
+        {activeCycle ?
           <Button
             type="button"
             color="danger"
