@@ -1,4 +1,4 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useReducer, useState } from "react";
 
 interface Cycle {
   id: string;
@@ -30,9 +30,60 @@ export const CyclesContext = createContext({} as ICycleContext);
 interface ICyclesContextProviderProps {
   children: React.ReactNode;
 }
+
+interface ICycleState {
+  cycles: Cycle[];
+  activeCycleId: string | null;
+}
 function CyclesContextProvider({ children }: ICyclesContextProviderProps) {
-  const [cycles, setCycles] = useState<Cycle[]>([]);
-  const [activeCycleId, setActiveCycleId] = useState<string | null>(null);
+  const [cyclesState, dispatch] = useReducer(
+    (state: ICycleState, action: any) => {
+      switch (action.type) {
+        case "ADD_NEW_CYCLE":
+          return {
+            ...state,
+            cycles: [...state.cycles, action.payload.newCycle],
+            activeCycleId: action.payload.newCycle.id
+          };
+        case "STOP_CURRENT_CYCLE":
+          return {
+            ...state,
+            cycles: state.cycles.map(cycle => {
+              if (cycle.id === action.payload.activeCycleId) {
+                return {
+                  ...cycle,
+                  stoppedAt: new Date()
+                };
+              }
+              return cycle;
+            }),
+            activeCycleId: null
+          };
+        case "MARK_CURRENT_CYCLE_AS_FINISHED":
+          return {
+            ...state,
+            cycles: state.cycles.map(cycle => {
+              if (cycle.id === action.payload.activeCycleId) {
+                return {
+                  ...cycle,
+                  finishedAt: new Date()
+                };
+              }
+              return cycle;
+            }),
+            activeCycleId: null
+          };
+        default:
+          return state;
+      }
+    },
+    {
+      cycles: [],
+      activeCycleId: null
+    }
+  );
+
+  const { cycles, activeCycleId } = cyclesState;
   const [amountSeconds, setAmountSeconds] = useState(0);
 
   const activeCycle = cycles.find(cycle => cycle.id === activeCycleId);
@@ -41,17 +92,11 @@ function CyclesContextProvider({ children }: ICyclesContextProviderProps) {
     setAmountSeconds(seconds);
   }
   function markCurrentCycleAsFinished() {
-    setCycles(prev => {
-      const newCycles = prev.map(cycle => {
-        if (cycle.id === activeCycleId) {
-          return {
-            ...cycle,
-            finishedAt: new Date()
-          };
-        }
-        return cycle;
-      });
-      return newCycles;
+    dispatch({
+      type: "MARK_CURRENT_CYCLE_AS_FINISHED",
+      payload: {
+        activeCycleId
+      }
     });
   }
 
@@ -65,26 +110,24 @@ function CyclesContextProvider({ children }: ICyclesContextProviderProps) {
       startDate: new Date()
     };
 
-    setCycles(prev => [...prev, newCycle]);
-    setActiveCycleId(id);
+    dispatch({
+      type: "ADD_NEW_CYCLE",
+      payload: {
+        newCycle
+      }
+    });
     setAmountSeconds(0);
 
   }
   function stopCurrentCycle() {
-    setCycles(prev => {
-      const newCycles = prev.map(cycle => {
-        if (cycle.id === activeCycleId) {
-          return {
-            ...cycle,
-            stoppedAt: new Date()
-          };
-        }
-        return cycle;
-      });
-      return newCycles;
+
+    dispatch({
+      type: "STOP_CURRENT_CYCLE",
+      payload: {
+        activeCycleId
+      }
     });
 
-    setActiveCycleId(null);
   }
 
   return (

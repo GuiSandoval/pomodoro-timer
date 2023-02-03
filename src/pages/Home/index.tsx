@@ -21,7 +21,6 @@ const newPomodoFormSchemaValidation = zod.object({
 type newPomodoFormData = zod.infer<typeof newPomodoFormSchemaValidation>
 
 export function Home() {
-
   const { activeCycle, createNewCycle, stopCurrentCycle } = useContext(CyclesContext);
 
   const newCycleForm = useForm<newPomodoFormData>({
@@ -43,7 +42,6 @@ export function Home() {
   return (
     <S.Container>
       <form action="" onSubmit={handleSubmit(handleCreateNewCycle)}>
-        createNewCycle
         <FormProvider {...newCycleForm}>
           <NewCycleForm />
         </FormProvider>
