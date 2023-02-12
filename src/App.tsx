@@ -9,14 +9,16 @@ import { Router } from "./Router";
 import { CyclesContextProvider } from "./contexts/CyclesContext";
 
 export function App() {
+  const baseNameUrl = window.location.pathname.split("/")[1];
+
   return (
-    <ThemeProvider theme={defaultTheme}>
-      <BrowserRouter>
+    <BrowserRouter basename={`/${baseNameUrl}`}>
+      <ThemeProvider theme={defaultTheme}>
         <CyclesContextProvider>
           <Router />
         </CyclesContextProvider>
-      </BrowserRouter>
-      <GlobalStyles />
-    </ThemeProvider>
+        <GlobalStyles />
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
